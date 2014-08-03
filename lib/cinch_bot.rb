@@ -6,7 +6,7 @@ bot = Cinch::Bot.new do
   configure do |c|
     c.nick            = "MistralRoller"
     c.server          = "irc.universaldark.net"
-    c.channels        = ["#chasethewind", "#ctwooc"]
+    c.channels        = ["#chasethewind"]
   end
 
   on :message, /(\d+)?d10(?:\s*(.*))?/ do |m, num, action|
