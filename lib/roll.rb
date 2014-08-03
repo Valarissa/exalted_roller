@@ -1,9 +1,15 @@
 class Roll
-  attr_accessor :action, :name, :handler, :threshold, :dice
+
+  def self.roll(dice, opts={})
+    new(opts.merge(dice: dice)).display_roll
+  end
+
+  attr_accessor :action, :name, :crit_handler, :crit_target, :target, :dice
 
   def initialize(options={})
-    self.threshold = options[:threshold] || 8
-    self.handler = options[:tens] || :double
+    self.target = options[:target] || 7
+    self.crit_target = options[:crit_target] || 10
+    self.crit_handler = options[:crit_handler] || :double
     self.name = options[:name] || "Anon"
     self.action = options[:action] || "doing something"
     self.dice = options[:dice].to_i || 1
@@ -16,7 +22,7 @@ class Roll
     num_of_dice.times do |die|
       temp_result << roll_die
     end
-    resolve_tens(temp_result)
+    resolve_crits(temp_result)
     result.concat(temp_result)
   end
 
@@ -35,7 +41,7 @@ class Roll
   end
 
   def result_text
-    "#{successes_text} #{dice_rolled}"
+    "[#{dice_rolled}] #{successes_text}"
   end
 
   def roll_text
@@ -43,58 +49,49 @@ class Roll
   end
 
   def dice_rolled
-    "[#{result.join(",")}]"
+    result.join(",")
   end
 
   def successes_text
-    case
-    when result_successes == 1
-      "#{result_successes} success"
-    when result_successes > 1
-      "#{result_successes} successes"
-    when result_successes == 0
-      "Fail"
-    else
-      "#{result_successes * -1}x botch!"
-    end
+    raise "subclass responsibility"
+  end
+
+  def critical_fail
+    raise "subclass responsibility"
   end
 
   def result_successes
     return success_total if success_total > 0
-    return botches
-  end
-
-  def botches
-    result.count{|roll| roll == 1} * -1
+    return critical_fail
   end
 
   def success_total
-    natural_tens + successes
+    crits + successes
   end
 
   def successes
-    result.count{|roll| roll >= threshold and roll < 10}
+    result.count{|roll| roll >= target and roll < crit_target}
   end
 
-  def natural_tens
-    send("#{handler}_tens", tens_rolled)
+  def crits
+    send("#{crit_handler}_crits", crits_rolled)
   end
 
-  def double_tens(tens)
-    tens * 2
+  def double_crits(crits)
+    crits * 2
   end
 
-  def roll_tens(tens)
-    tens
+  def roll_crits(crits)
+    crits
   end
 
-  def resolve_tens(rolled)
-    return if handler != :roll
-    return if tens_rolled(rolled) == 0
-    roll_dice(tens_rolled(rolled))
+  def resolve_crits(rolled)
+    return if crit_handler != :roll
+    return if crits_rolled(rolled) == 0
+    roll_dice(crits_rolled(rolled))
   end
 
-  def tens_rolled(rolled = result)
-    rolled.count{|roll| roll == 10}
+  def crits_rolled(rolled = result)
+    rolled.count{|roll| roll >= crit_target}
   end
 end
